@@ -1,6 +1,8 @@
 uiautomator
 ===========
 
+Fork from: <https://github.com/xiaocong/uiautomator>
+
 [![Join the chat at https://gitter.im/xiaocong/uiautomator](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/xiaocong/uiautomator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [![MIT License](https://img.shields.io/github/license/xiaocong/uiautomator.svg)](http://opensource.org/licenses/MIT)
@@ -20,8 +22,17 @@ d(text="Clock").click()
 
 ## Installation
 
-    $ pip install uiautomator
+    $ pip install atx-uiautomator
 
+### Changes between origin code
+1. Add input method: _com.github.uiautomator/.UnicodeIME_
+
+  How to use
+
+  ```
+  adb shell ime enable com.github.uiautomator/.UnicodeIME
+  adb shell ime set com.github.uiautomator/.UnicodeIME
+  ```
 
 ### Pre-requirements
 

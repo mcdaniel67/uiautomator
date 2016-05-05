@@ -15,10 +15,10 @@ test_requires = [
     'coverage>=3.6'
 ]
 
-version = '0.2.6'
+version = '0.2.7'
 
 setup(
-    name='uiautomator',
+    name='atx-uiautomator',
     version=version,
     description='Python Wrapper for Android UiAutomator test tool',
     long_description='Python wrapper for Android uiautomator tool.',
