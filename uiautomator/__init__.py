@@ -5,6 +5,7 @@
 
 import sys
 import os
+import functools
 import subprocess
 import time
 import itertools
@@ -14,6 +15,8 @@ import socket
 import re
 import collections
 import xml.dom.minidom
+
+import requests
 
 
 DEVICE_PORT = int(os.environ.get('UIAUTOMATOR_DEVICE_PORT', '9008'))
@@ -30,11 +33,7 @@ try:
     from httplib import HTTPException
 except:
     from http.client import HTTPException
-try:
-    if os.name == 'nt':
-        import urllib3
-except:  # to fix python setup error on Windows.
-    pass
+
 
 __author__ = "Xiaocong He, Codeskyblue"
 __all__ = ["device", "Device", "rect", "point", "Selector", "JsonRPCError"]
@@ -51,12 +50,83 @@ def U(x):
         return x
 
 
+_listeners = {}
+
+def add_listener(name, fn):
+    _listeners[name] = fn
+
+def remove_listener(name):
+    _listeners.pop(name, None)
+
+
+def wrapped_param_to_property(instance, *props, **kwprops):
+    def wrap_func(fn):
+        @functools.wraps(fn)
+        def _inner(*args, **kwargs):
+            # before hooks
+            for hook_func in _listeners.values():
+                hook_func(dict(name=fn.__name__, self=instance, args=args, kwargs=kwargs, is_before=True))
+            ret = fn(*args, **kwargs)
+            # after hooks
+            for hook_func in _listeners.values():
+                hook_func(dict(name=fn.__name__, self=instance, args=args, kwargs=kwargs, is_before=False, retval=ret))
+            return ret
+        return _inner
+    
+    if props and kwprops:
+        raise SyntaxError("Can not set both props and kwprops at the same time.")
+
+    class _Wrapper(object):
+        def __init__(self, func):
+            self.func = wrap_func(func)
+            self.kwargs, self.args = {}, []
+
+        def __getattr__(self, attr):
+            if kwprops:
+                for prop_name, prop_values in kwprops.items():
+                    if attr in prop_values and prop_name not in self.kwargs:
+                        self.kwargs[prop_name] = attr
+                        return self
+            elif attr in props:
+                self.args.append(attr)
+                return self
+            raise AttributeError("%s parameter is duplicated or not allowed!" % attr)
+
+        def __call__(self, *args, **kwargs):
+            if kwprops:
+                kwargs.update(self.kwargs)
+                self.kwargs = {}
+                return self.func(*args, **kwargs)
+            else:
+                new_args, self.args = self.args + list(args), []
+                return self.func(*new_args, **kwargs)
+    return _Wrapper
+
+
 def param_to_property(*props, **kwprops):
+    """
+    Usage:
+
+    @property
+    def open(self):
+        '''
+        Open notification or quick settings.
+        Usage:
+        d.open.notification()
+        d.open.quick_settings()
+        '''
+        @param_to_property(action=["notification", "quick_settings"])
+        def _open(action):
+            if action == "notification":
+                pass
+            elif action == "quick_settings":
+                pass
+        return _open
+    """
     if props and kwprops:
         raise SyntaxError("Can not set both props and kwprops at the same time.")
 
     class Wrapper(object):
-
         def __init__(self, func):
             self.func = func
             self.kwargs, self.args = {}, []
@@ -94,16 +164,22 @@ class JsonRPCError(Exception):
 
 
 class JsonRPCMethod(object):
-
-    if os.name == 'nt':
-        try:
-            pool = urllib3.PoolManager()
-        except:
-            pass
-
     def __init__(self, url, method, timeout=30):
         self.url, self.method, self.timeout = url, method, timeout
 
+    def remote_call(self, data):
+        res = requests.post(self.url,
+            headers={"Content-Type": "application/json"},
+            timeout=self.timeout,
+            data=json.dumps(data).encode('utf-8'))
+        jsonresult = res.json()
+        if "error" in jsonresult and jsonresult["error"]:
+            raise JsonRPCError(
+                jsonresult["error"]["code"],
+                "%s: %s" % (jsonresult["error"]["data"]["exceptionTypeName"], jsonresult["error"]["message"])
+            )
+        return jsonresult["result"]
+        
     def __call__(self, *args, **kwargs):
         if args and kwargs:
             raise SyntaxError("Could not accept both *args and **kwargs as JSONRPC parameters.")
@@ -112,31 +188,7 @@ class JsonRPCMethod(object):
             data["params"] = args
         elif kwargs:
             data["params"] = kwargs
-        jsonresult = {"result": ""}
-        if os.name == "nt":
-            res = self.pool.urlopen("POST",
-                                    self.url,
-                                    headers={"Content-Type": "application/json"},
-                                    body=json.dumps(data).encode("utf-8"),
-                                    timeout=self.timeout)
-            jsonresult = json.loads(res.data.decode("utf-8"))
-        else:
-            result = None
-            try:
-                req = urllib2.Request(self.url,
-                                      json.dumps(data).encode("utf-8"),
-                                      {"Content-type": "application/json"})
-                result = urllib2.urlopen(req, timeout=self.timeout)
-                jsonresult = json.loads(result.read().decode("utf-8"))
-            finally:
-                if result is not None:
-                    result.close()
-        if "error" in jsonresult and jsonresult["error"]:
-            raise JsonRPCError(
-                jsonresult["error"]["code"],
-                "%s: %s" % (jsonresult["error"]["data"]["exceptionTypeName"], jsonresult["error"]["message"])
-            )
-        return jsonresult["result"]
+        return self.remote_call(data)
 
     def id(self):
         m = hashlib.md5()
@@ -145,7 +197,6 @@ class JsonRPCMethod(object):
 
 
 class JsonRPCClient(object):
-
     def __init__(self, url, timeout=30, method_class=JsonRPCMethod):
         self.url = url
         self.timeout = timeout
@@ -156,7 +207,6 @@ class JsonRPCClient(object):
 
 
 class Selector(dict):
-
     """The class is to build parameters for UiSelector passed to Android device.
     """
     __fields = {
@@ -352,7 +402,6 @@ def next_local_port(adb_host=None):
 
 
 class NotFoundHandler(object):
-
     '''
     Handler for UI Object Not Found exception.
     It's a replacement of UiAutomator watcher on device side.
@@ -366,7 +415,6 @@ class NotFoundHandler(object):
 
 
 class AutomatorServer(object):
-
     """start and quit rpc server on device.
     """
     __jar_files = {
@@ -419,7 +467,7 @@ class AutomatorServer(object):
 
         def _JsonRPCMethod(url, method, timeout, restart=True):
             _method_obj = JsonRPCMethod(url, method, timeout)
-            _URLError = urllib3.exceptions.HTTPError if _is_windows() else urllib2.URLError
+            _URLError = requests.exceptions.ConnectionError
 
             def wrapper(*args, **kwargs):
                 try:
@@ -871,7 +919,6 @@ Device = AutomatorDevice
 
 
 class AutomatorDeviceUiObject(object):
-
     '''Represent a UiObject, on which user can perform actions, such as click, set text
     '''
 
@@ -923,7 +970,7 @@ class AutomatorDeviceUiObject(object):
         d(text="John").click.topleft() # click on the topleft of the ui object
         d(text="John").click.bottomright() # click on the bottomright of the ui object
         '''
-        @param_to_property(action=["tl", "topleft", "br", "bottomright", "wait"])
+        @wrapped_param_to_property(self, action=["tl", "topleft", "br", "bottomright", "wait"])
         def _click(action=None, timeout=3000):
             if action is None:
                 return self.jsonrpc.click(self.selector)
@@ -942,7 +989,7 @@ class AutomatorDeviceUiObject(object):
         d(text="Image").long_click.topleft()  # long click on the topleft of the ui object
         d(text="Image").long_click.bottomright()  # long click on the topleft of the ui object
         '''
-        @param_to_property(corner=["tl", "topleft", "br", "bottomright"])
+        @wrapped_param_to_property(self, corner=["tl", "topleft", "br", "bottomright"])
         def _long_click(corner=None):
             info = self.info
             if info["longClickable"]:
