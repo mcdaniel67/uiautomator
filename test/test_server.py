@@ -50,7 +50,7 @@ class TestAutomatorServer(unittest.TestCase):
         server.ping.return_value = "pong"
         server.adb = MagicMock()
         server.start()
-        server.adb.cmd.assert_valled_onec_with('shell', 'uiautomator', 'runtest', 'bundle.jar', 'uiautomator-stub.jar', '-c', 'com.github.uiautomatorstub.Stub')
+        server.adb.cmd.assert_called_with('shell', 'uiautomator', 'runtest', 'bundle.jar', 'uiautomator-stub.jar', '-c', 'com.github.uiautomatorstub.Stub')
 
     def test_start_error(self):
         server = AutomatorServer()
@@ -65,11 +65,15 @@ class TestAutomatorServer(unittest.TestCase):
 
     def test_auto_start(self):
         try:
-            import urllib2
+            import requests
+            # import urllib2
         except ImportError:
-            import urllib.request as urllib2
+            raise
+            # import urllib.request as urllib2
         with patch("uiautomator.JsonRPCMethod") as JsonRPCMethod:
-            returns = [urllib2.URLError("error"), "ok"]
+            # returns = [urllib2.URLError("error"), "ok"]
+            returns = [requests.exceptions.ConnectionError("error"), "ok"]
+            
             def side_effect():
                 result = returns.pop(0)
                 if isinstance(result, Exception):
@@ -83,6 +87,7 @@ class TestAutomatorServer(unittest.TestCase):
             server.start.assert_called_once_with(timeout=30)
         with patch("uiautomator.JsonRPCMethod") as JsonRPCMethod:
             returns = [JsonRPCError(-32000-1, "error msg"), "ok"]
+            
             def side_effect():
                 result = returns.pop(0)
                 if isinstance(result, Exception):
@@ -117,8 +122,7 @@ class TestAutomatorServer(unittest.TestCase):
             self.assertEqual(server.ping(), None)
 
 
-class TestAutomatorServer_Stop(unittest.TestCase):
-
+class TestAutomatorServerStop(unittest.TestCase):
     def setUp(self):
         try:
             import urllib2

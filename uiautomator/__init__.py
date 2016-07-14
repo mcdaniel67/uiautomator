@@ -172,6 +172,8 @@ class JsonRPCMethod(object):
             headers={"Content-Type": "application/json"},
             timeout=self.timeout,
             data=json.dumps(data).encode('utf-8'))
+        if res.status_code != 200:
+            raise JsonRPCError(res.status_code, "HTTP Return code is not 200")
         jsonresult = res.json()
         if "error" in jsonresult and jsonresult["error"]:
             raise JsonRPCError(

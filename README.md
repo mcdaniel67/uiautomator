@@ -3,7 +3,7 @@ uiautomator
 
 Fork from: <https://github.com/xiaocong/uiautomator>
 
-[![MIT License](https://img.shields.io/github/license/codeskyblue/atx-uiautomator.svg)](http://opensource.org/licenses/MIT)
+[![MIT License](https://img.shields.io/pypi/l/atx-uiautomator.svg)](http://opensource.org/licenses/MIT)
 [![Build Status](https://travis-ci.org/codeskyblue/atx-uiautomator.svg?branch=master)](https://travis-ci.org/codeskyblue/atx-uiautomator)
 [![pypi](https://img.shields.io/pypi/v/atx-uiautomator.svg)](https://pypi.python.org/pypi/atx-uiautomator)
 [![downloads](https://img.shields.io/pypi/dm/atx-uiautomator.svg)](https://pypi.python.org/pypi/atx-uiautomator)
@@ -743,8 +743,7 @@ If you have any bug reports or annoyances please report them to our issue tracke
     JsonRPC server needs to access temp directory on device, but on some low tier devices, it may meet error during accessing temp files without SD-CARD attached. So if you met the error, please insert a SD-CARD and then try again.
 
 ## License
-
-MIT
+[MIT LICENSE](LICENSE)
 
 [uiautomator]: http://developer.android.com/tools/testing/testing_ui.html "Android ui testing"
 [github issues]: https://github.com/xiaocong/uiautomator/issues
