@@ -3,13 +3,10 @@ uiautomator
 
 Fork from: <https://github.com/xiaocong/uiautomator>
 
-[![Join the chat at https://gitter.im/xiaocong/uiautomator](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/xiaocong/uiautomator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-[![MIT License](https://img.shields.io/github/license/xiaocong/uiautomator.svg)](http://opensource.org/licenses/MIT)
-[![build](https://img.shields.io/travis/xiaocong/uiautomator/master.svg)](https://travis-ci.org/xiaocong/uiautomator)
-[![Coverage Status](https://img.shields.io/coveralls/xiaocong/uiautomator/master.svg)](https://coveralls.io/r/xiaocong/uiautomator?branch=master)
-[![pypi](https://img.shields.io/pypi/v/uiautomator.svg)](https://pypi.python.org/pypi/uiautomator)
-[![downloads](https://img.shields.io/pypi/dm/uiautomator.svg)](https://pypi.python.org/pypi/uiautomator)
+[![MIT License](https://img.shields.io/github/license/codeskyblue/atx-uiautomator.svg)](http://opensource.org/licenses/MIT)
+[![Build Status](https://travis-ci.org/codeskyblue/atx-uiautomator.svg?branch=master)](https://travis-ci.org/codeskyblue/atx-uiautomator)
+[![pypi](https://img.shields.io/pypi/v/atx-uiautomator.svg)](https://pypi.python.org/pypi/atx-uiautomator)
+[![downloads](https://img.shields.io/pypi/dm/atx-uiautomator.svg)](https://pypi.python.org/pypi/atx-uiautomator)
 
 This module is a Python wrapper of Android [uiautomator][] testing framework. It works on Android 4.1+ simply with Android device attached via adb, no need to install anything on Android device.
 
