@@ -4,7 +4,7 @@ uiautomator
 Fork from: <https://github.com/xiaocong/uiautomator>
 
 [![MIT License](https://img.shields.io/pypi/l/atx-uiautomator.svg)](http://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/codeskyblue/atx-uiautomator.svg?branch=master)](https://travis-ci.org/codeskyblue/atx-uiautomator)
+[![Build Status](https://travis-ci.org/openatx/atx-uiautomator.svg?branch=master)](https://travis-ci.org/openatx/atx-uiautomator)
 [![pypi](https://img.shields.io/pypi/v/atx-uiautomator.svg)](https://pypi.python.org/pypi/atx-uiautomator)
 [![downloads](https://img.shields.io/pypi/dm/atx-uiautomator.svg)](https://pypi.python.org/pypi/atx-uiautomator)
 
