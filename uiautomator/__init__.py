@@ -3,6 +3,8 @@
 
 """Python wrapper for Android uiautomator tool."""
 
+from __future__ import absolute_import
+
 import sys
 import os
 import functools
@@ -18,6 +20,7 @@ import xml.dom.minidom
 
 import requests
 
+from uiautomator.adb import Adb
 
 DEVICE_PORT = int(os.environ.get('UIAUTOMATOR_DEVICE_PORT', '9008'))
 LOCAL_PORT = int(os.environ.get('UIAUTOMATOR_LOCAL_PORT', '9008'))
@@ -297,96 +300,6 @@ def intersect(rect1, rect2):
 def point(x=0, y=0):
     return {"x": x, "y": y}
 
-
-class Adb(object):
-
-    def __init__(self, serial=None, adb_server_host=None, adb_server_port=None):
-        self.__adb_cmd = None
-        self.default_serial = serial if serial else os.environ.get("ANDROID_SERIAL", None)
-        self.adb_server_host = str(adb_server_host if adb_server_host else 'localhost')
-        self.adb_server_port = str(adb_server_port if adb_server_port else '5037')
-        self.adb_host_port_options = []
-        if self.adb_server_host not in ['localhost', '127.0.0.1']:
-            self.adb_host_port_options += ["-H", self.adb_server_host]
-        if self.adb_server_port != '5037':
-            self.adb_host_port_options += ["-P", self.adb_server_port]
-
-    def adb(self):
-        if self.__adb_cmd is None:
-            if "ANDROID_HOME" in os.environ:
-                filename = "adb.exe" if _is_windows() else "adb"
-                adb_cmd = os.path.join(os.environ["ANDROID_HOME"], "platform-tools", filename)
-                if not os.path.exists(adb_cmd):
-                    raise EnvironmentError(
-                        "Adb not found in $ANDROID_HOME path: %s." % os.environ["ANDROID_HOME"])
-            else:
-                import distutils
-                if "spawn" not in dir(distutils):
-                    import distutils.spawn
-                adb_cmd = distutils.spawn.find_executable("adb")
-                if adb_cmd:
-                    adb_cmd = os.path.realpath(adb_cmd)
-                else:
-                    raise EnvironmentError("$ANDROID_HOME environment not set.")
-            self.__adb_cmd = adb_cmd
-        return self.__adb_cmd
-
-    def cmd(self, *args, **kwargs):
-        '''adb command, add -s serial by default. return the subprocess.Popen object.'''
-        serial = self.device_serial()
-        if serial:
-            if " " in serial:  # TODO how to include special chars on command line
-                serial = "'%s'" % serial
-            return self.raw_cmd(*["-s", serial] + list(args))
-        else:
-            return self.raw_cmd(*args)
-
-    def raw_cmd(self, *args):
-        '''adb command. return the subprocess.Popen object.'''
-        cmd_line = [self.adb()] + self.adb_host_port_options + list(args)
-        if not _is_windows():
-            cmd_line = [" ".join(cmd_line)]
-        return subprocess.Popen(cmd_line, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    def device_serial(self):
-        if not self.default_serial:
-            devices = self.devices()
-            if devices:
-                if len(devices) is 1:
-                    self.default_serial = list(devices.keys())[0]
-                else:
-                    raise EnvironmentError("Multiple devices attached but default android serial not set.")
-            else:
-                raise EnvironmentError("Device not attached.")
-        return self.default_serial
-
-    def devices(self):
-        '''get a dict of attached devices. key is the device serial, value is device name.'''
-        out = self.raw_cmd("devices").communicate()[0].decode("utf-8")
-        match = "List of devices attached"
-        index = out.find(match)
-        if index < 0:
-            raise EnvironmentError("adb is not working.")
-        return dict([s.split("\t") for s in out[index + len(match):].strip().splitlines() if s.strip()])
-
-    def forward(self, local_port, device_port):
-        '''adb port forward. return 0 if success, else non-zero.'''
-        return self.cmd("forward", "tcp:%d" % local_port, "tcp:%d" % device_port).wait()
-
-    def forward_list(self):
-        '''adb forward --list'''
-        version = self.version()
-        if int(version[1]) <= 1 and int(version[2]) <= 0 and int(version[3]) < 31:
-            raise EnvironmentError("Low adb version.")
-        lines = self.raw_cmd("forward", "--list").communicate()[0].decode("utf-8").strip().splitlines()
-        return [line.strip().split() for line in lines]
-
-    def version(self):
-        '''adb version'''
-        match = re.search(r"(\d+)\.(\d+)\.(\d+)", self.raw_cmd("version").communicate()[0].decode("utf-8"))
-        return [match.group(i) for i in range(4)]
-
-
 _init_local_port = LOCAL_PORT - 1
 
 
@@ -425,6 +338,10 @@ class AutomatorServer(object):
     }
 
     __apk_files = ["libs/app-uiautomator.apk", "libs/app-uiautomator-test.apk"]
+    # Used for check if installed
+    __apk_vercode = 1
+    __apk_pkgname = 'com.github.uiautomator'
+    __apk_pkgname_test = 'com.github.uiautomator.test'
 
     __sdk = 0
 
@@ -454,10 +371,21 @@ class AutomatorServer(object):
             self.adb.cmd("push", filename, "/data/local/tmp/").wait()
         return list(self.__jar_files.keys())
 
+    def need_install(self):
+        pkginfo = self.adb.package_info(self.__apk_pkgname)
+        if pkginfo is None:
+            return True
+        if pkginfo['version_code'] != self.__apk_vercode:
+            return True
+        if self.adb.package_info(self.__apk_pkgname_test) is None:
+            return True
+        return False
+        
     def install(self):
         base_dir = os.path.dirname(__file__)
-        for apk in self.__apk_files:
-            self.adb.cmd("install", "-rt", os.path.join(base_dir, apk)).wait()
+        if self.need_install():
+            for apk in self.__apk_files:
+                self.adb.cmd("install", "-rt", os.path.join(base_dir, apk)).wait()
 
     @property
     def jsonrpc(self):
@@ -1023,9 +951,11 @@ class AutomatorDeviceUiObject(object):
         '''
         def to(obj, *args, **kwargs):
             if len(args) >= 2 or "x" in kwargs or "y" in kwargs:
-                drag_to = lambda x, y, steps=100: self.jsonrpc.dragTo(self.selector, x, y, steps)
+                def drag_to(x, y, steps=100):
+                    return self.jsonrpc.dragTo(self.selector, x, y, steps)
             else:
-                drag_to = lambda steps=100, **kwargs: self.jsonrpc.dragTo(self.selector, Selector(**kwargs), steps)
+                def drag_to(steps=100, **kwargs):
+                    return self.jsonrpc.dragTo(self.selector, Selector(**kwargs), steps)
             return drag_to(*args, **kwargs)
         return type("Drag", (object,), {"to": to})()
 
@@ -1037,7 +967,8 @@ class AutomatorDeviceUiObject(object):
         d().gesture(startPoint1, startPoint2, endPoint1, endPoint2, steps)
         '''
         def to(obj_self, end1, end2, steps=100):
-            ctp = lambda pt: point(*pt) if type(pt) == tuple else pt  # convert tuple to point
+            def ctp(pt):
+                return point(*pt) if type(pt) == tuple else pt
             s1, s2, e1, e2 = ctp(start1), ctp(start2), ctp(end1), ctp(end2)
             return self.jsonrpc.gesture(self.selector, s1, s2, e1, e2, steps)
         obj = type("Gesture", (object,), {"to": to})()
