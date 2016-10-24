@@ -442,7 +442,10 @@ class AutomatorServer(object):
         return self.__sdk
 
     def start(self, timeout=5):
-        if self.sdk_version() < 18:
+        # always use uiautomator runtest
+        # This is because use am instrument can not found a way to stop it
+        # this will stuck when Automator not started error occurs
+        if True or self.sdk_version() < 18: # FIXME(ssx): hot fix here
             files = self.push()
             cmd = list(itertools.chain(
                 ["shell", "uiautomator", "runtest"],
