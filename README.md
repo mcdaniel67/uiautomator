@@ -39,12 +39,6 @@ d(text="Clock").click()
 
 ### import uiautomator
 
-- If `ANDROID_SERIAL` is defined in environment, or there is only one device connected:
-
-  ```python
-  from uiautomator import device as d
-  ```
-
 - Speficy the serial number when retrieving the device object
 
   ```python
@@ -61,6 +55,12 @@ d(text="Clock").click()
   from uiautomator import Device
 
   d = Device('014E05DE0F02000E', adb_server_host='192.168.1.68', adb_server_port=5037)
+  ```
+
+- **Removed** If `ANDROID_SERIAL` is defined in environment, or there is only one device connected:
+
+  ```python
+  from uiautomator import device as d
   ```
 
 ---

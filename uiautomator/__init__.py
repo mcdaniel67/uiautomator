@@ -39,7 +39,7 @@ except:
 
 
 __author__ = "Xiaocong He, Codeskyblue"
-__all__ = ["device", "Device", "rect", "point", "Selector", "JsonRPCError"]
+__all__ = ["Device", "rect", "point", "Selector", "JsonRPCError"]
 
 
 def _is_windows():
@@ -1253,5 +1253,3 @@ class AutomatorDeviceObject(AutomatorDeviceUiObject):
             elif action == "to":
                 return __scroll_to(vertical, **kwargs)
         return _scroll
-
-device = AutomatorDevice()
