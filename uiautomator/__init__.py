@@ -1226,14 +1226,14 @@ class AutomatorDeviceObject(AutomatorDeviceUiObject):
         d().scroll.vert.toEnd(steps=100)
         d().scroll.horiz.to(text="Clock")
         '''
-        def __scroll(vertical, forward, steps=100):
+        def __scroll(vertical, forward, steps=50):
             method = self.jsonrpc.scrollForward if forward else self.jsonrpc.scrollBackward
             return method(self.selector, vertical, steps)
 
-        def __scroll_to_beginning(vertical, steps=100, max_swipes=1000):
+        def __scroll_to_beginning(vertical, steps=20, max_swipes=200):
             return self.jsonrpc.scrollToBeginning(self.selector, vertical, max_swipes, steps)
 
-        def __scroll_to_end(vertical, steps=100, max_swipes=1000):
+        def __scroll_to_end(vertical, steps=20, max_swipes=500):
             return self.jsonrpc.scrollToEnd(self.selector, vertical, max_swipes, steps)
 
         def __scroll_to(vertical, **kwargs):
