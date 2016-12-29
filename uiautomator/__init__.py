@@ -1230,7 +1230,7 @@ class AutomatorDeviceObject(AutomatorDeviceUiObject):
             method = self.jsonrpc.scrollForward if forward else self.jsonrpc.scrollBackward
             return method(self.selector, vertical, steps)
 
-        def __scroll_to_beginning(vertical, steps=20, max_swipes=200):
+        def __scroll_to_beginning(vertical, steps=20, max_swipes=500):
             return self.jsonrpc.scrollToBeginning(self.selector, vertical, max_swipes, steps)
 
         def __scroll_to_end(vertical, steps=20, max_swipes=500):
