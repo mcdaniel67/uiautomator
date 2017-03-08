@@ -3,7 +3,7 @@
 
 """Python wrapper for Android uiautomator tool."""
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys
 import os
@@ -24,6 +24,7 @@ from uiautomator.adb import Adb
 
 DEVICE_PORT = int(os.environ.get('UIAUTOMATOR_DEVICE_PORT', '9008'))
 LOCAL_PORT = int(os.environ.get('UIAUTOMATOR_LOCAL_PORT', '9008'))
+DEBUG = False
 
 if 'localhost' not in os.environ.get('no_proxy', ''):
     os.environ['no_proxy'] = "localhost,%s" % os.environ.get('no_proxy', '')
@@ -40,6 +41,11 @@ except:
 
 __author__ = "Xiaocong He, Codeskyblue"
 __all__ = ["Device", "rect", "point", "Selector", "JsonRPCError"]
+
+
+def debug_print(*args):
+    if DEBUG:
+        print(args)
 
 
 def _is_windows():
@@ -188,6 +194,7 @@ class JsonRPCMethod(object):
     def __call__(self, *args, **kwargs):
         if args and kwargs:
             raise SyntaxError("Could not accept both *args and **kwargs as JSONRPC parameters.")
+        debug_print('jsonrpc method:', self.method)
         data = {"jsonrpc": "2.0", "method": self.method, "id": self.id()}
         if args:
             data["params"] = args
@@ -404,15 +411,17 @@ class AutomatorServer(object):
                     return _method_obj(*args, **kwargs)
                 except (_URLError, socket.error, HTTPException) as e:
                     if restart:
+                        debug_print('restart')
                         server.stop()
                         server.start(timeout=30)
                         return _JsonRPCMethod(url, method, timeout, False)(*args, **kwargs)
                     else:
                         raise
                 except JsonRPCError as e:
+                    debug_print('rpc error', e.code, e.message)
                     if e.code >= error_code_base - 1:
                         server.stop()
-                        server.start()
+                        server.start(timeout=10)
                         return _method_obj(*args, **kwargs)
                     elif e.code == error_code_base - 2 and self.handlers['on']:  # Not Found
                         try:
@@ -442,10 +451,11 @@ class AutomatorServer(object):
         return self.__sdk
 
     def start(self, timeout=5):
-        # always use uiautomator runtest
-        # This is because use am instrument can not found a way to stop it
-        # this will stuck when Automator not started error occurs
-        if True or self.sdk_version() < 18: # FIXME(ssx): hot fix here
+        # 对应关系列表
+        # http://www.cnblogs.com/lipeineng/archive/2017/01/06/6257859.html
+        # Android 4.3 (sdk=18)
+        debug_print('sdk version(instrument>=18)', self.sdk_version())
+        if self.sdk_version() < 18: # FIXME(ssx): hot fix here
             files = self.push()
             cmd = list(itertools.chain(
                 ["shell", "uiautomator", "runtest"],
@@ -461,8 +471,8 @@ class AutomatorServer(object):
         self.adb.forward(self.local_port, self.device_port)
 
         while not self.alive and timeout > 0:
-            time.sleep(0.1)
-            timeout -= 0.1
+            time.sleep(0.2)
+            timeout -= 0.2
         if not self.alive:
             raise IOError("RPC server not started!")
 
@@ -472,17 +482,24 @@ class AutomatorServer(object):
         except:
             return None
 
+    def info(self):
+        try:
+            return self.__jsonrpc().deviceInfo()
+        except:
+            return False
+
     @property
     def alive(self):
         '''Check if the rpc server is alive.'''
-        return self.ping() == "pong"
+        return self.info()
+        # return self.ping() == "pong"
 
     def stop(self):
         '''Stop the rpc server.'''
         if self.uiautomator_process and self.uiautomator_process.poll() is None:
             res = None
             try:
-                res = urllib2.urlopen(self.stop_uri)
+                res = requests.get(self.stop_uri)
                 self.uiautomator_process.wait()
             except:
                 self.uiautomator_process.kill()

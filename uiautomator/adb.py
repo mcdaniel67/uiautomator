@@ -59,7 +59,7 @@ class Adb(object):
         cmd_line = [self.adb()] + self.adb_host_port_options + list(args)
         if not _is_windows():
             cmd_line = [" ".join(cmd_line)]
-        return subprocess.Popen(cmd_line, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.Popen(cmd_line, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def shell(self, *args):
         '''adb command, return adb shell <args> output.'''
