@@ -19,7 +19,7 @@ class TestMisc(unittest.TestCase):
         except:
             pass
         reload(uiautomator)
-        self.assertIsNotNone(uiautomator.device)
+        #self.assertIsNotNone(uiautomator.device) # removed
         self.assertIsNotNone(uiautomator.rect)
         self.assertIsNotNone(uiautomator.point)
 
