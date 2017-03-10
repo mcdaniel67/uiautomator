@@ -455,7 +455,8 @@ class AutomatorServer(object):
         # http://www.cnblogs.com/lipeineng/archive/2017/01/06/6257859.html
         # Android 4.3 (sdk=18)
         debug_print('sdk version(instrument>=18)', self.sdk_version())
-        if self.sdk_version() < 18: # FIXME(ssx): hot fix here
+        # instrument cannot run on Xiaomi
+        if True or self.sdk_version() < 18: # FIXME(ssx): hot fix here
             files = self.push()
             cmd = list(itertools.chain(
                 ["shell", "uiautomator", "runtest"],
