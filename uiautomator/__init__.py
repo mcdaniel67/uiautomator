@@ -24,7 +24,7 @@ from uiautomator.adb import Adb
 
 DEVICE_PORT = int(os.environ.get('UIAUTOMATOR_DEVICE_PORT', '9008'))
 LOCAL_PORT = int(os.environ.get('UIAUTOMATOR_LOCAL_PORT', '9008'))
-DEBUG = False
+DEBUG = os.getenv('UIAUTOMATOR_DEBUG') == 'true'
 
 if 'localhost' not in os.environ.get('no_proxy', ''):
     os.environ['no_proxy'] = "localhost,%s" % os.environ.get('no_proxy', '')
@@ -468,12 +468,18 @@ class AutomatorServer(object):
             cmd = ["shell", "am", "instrument", "-w",
                    "com.github.uiautomator.test/android.support.test.runner.AndroidJUnitRunner"]
 
+        debug_print('$ ' + subprocess.list2cmdline(list(cmd)))
         self.uiautomator_process = self.adb.cmd(*cmd)
         self.adb.forward(self.local_port, self.device_port)
 
         while not self.alive and timeout > 0:
             time.sleep(0.2)
             timeout -= 0.2
+            debug_print('poll', self.uiautomator_process.poll())
+            if self.uiautomator_process.poll() is not None:
+                stdout = self.uiautomator_process.stdout.read()
+                raise IOError("uiautomator start failed: " + stdout)
+                #print('stdout', self.uiautomator_process.stdout.read())
         if not self.alive:
             raise IOError("RPC server not started!")
 
