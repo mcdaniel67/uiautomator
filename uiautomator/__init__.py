@@ -450,23 +450,32 @@ class AutomatorServer(object):
                 pass
         return self.__sdk
 
+    def ro_product(self):
+        return self.adb.shell("getprop", "ro.build.product").strip()
+
     def start(self, timeout=5):
         # 对应关系列表
         # http://www.cnblogs.com/lipeineng/archive/2017/01/06/6257859.html
         # Android 4.3 (sdk=18)
         debug_print('sdk version(instrument>=18)', self.sdk_version())
+        debug_print('product', self.ro_product())
+        # FIXME(ssx): hot fix here
         # instrument cannot run on Xiaomi
-        if True or self.sdk_version() < 18: # FIXME(ssx): hot fix here
+        if self.sdk_version() >= 18 and \
+                self.ro_product() in [
+                    'iToolsVM', # iTools
+                    'Che1-CL20',# 荣耀畅玩4X
+                ]:
+            self.install()
+            cmd = ["shell", "am", "instrument", "-w",
+                   "com.github.uiautomator.test/android.support.test.runner.AndroidJUnitRunner"]
+        else:
             files = self.push()
             cmd = list(itertools.chain(
                 ["shell", "uiautomator", "runtest"],
                 files,
                 ["-c", "com.github.uiautomatorstub.Stub"]
             ))
-        else:
-            self.install()
-            cmd = ["shell", "am", "instrument", "-w",
-                   "com.github.uiautomator.test/android.support.test.runner.AndroidJUnitRunner"]
 
         debug_print('$ ' + subprocess.list2cmdline(list(cmd)))
         self.uiautomator_process = self.adb.cmd(*cmd)
@@ -479,7 +488,6 @@ class AutomatorServer(object):
             if self.uiautomator_process.poll() is not None:
                 stdout = self.uiautomator_process.stdout.read()
                 raise IOError("uiautomator start failed: " + stdout)
-                #print('stdout', self.uiautomator_process.stdout.read())
         if not self.alive:
             raise IOError("RPC server not started!")
 
