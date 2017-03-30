@@ -21,16 +21,6 @@ d(text="Clock").click()
 
     $ pip install atx-uiautomator
 
-### Changes between origin code
-1. Add input method: _com.github.uiautomator/.UnicodeIME_
-
-  How to use
-
-  ```
-  adb shell ime enable com.github.uiautomator/.UnicodeIME
-  adb shell ime set com.github.uiautomator/.UnicodeIME
-  ```
-
 ### Pre-requirements
 
 - Install [Android SDK](http://developer.android.com/sdk/index.html), and set `ANDROID_HOME` environment to the correct path.

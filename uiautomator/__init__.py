@@ -464,8 +464,7 @@ class AutomatorServer(object):
         if self.sdk_version() >= 18 and \
                 self.ro_product() in [
                     'iToolsVM', # iTools
-                    'Che1-CL20',# 荣耀畅玩4X
-                ]:
+                    'Che1-CL20']:# 荣耀畅玩4X 
             self.install()
             cmd = ["shell", "am", "instrument", "-w",
                    "com.github.uiautomator.test/android.support.test.runner.AndroidJUnitRunner"]
@@ -506,7 +505,7 @@ class AutomatorServer(object):
     @property
     def alive(self):
         '''Check if the rpc server is alive.'''
-        return self.info()
+        return self.ping() == "pong" and self.info()
         # return self.ping() == "pong"
 
     def stop(self):
