@@ -64,7 +64,7 @@ class Adb(object):
         return subprocess.Popen(cmd_line, shell=True, \
                 stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    def run_cmd(self, *args, _ok_code=[0]):
+    def run_cmd(self, *args, **kwargs):
         '''Run command and wait exit
         Args:
             - args: command args
@@ -76,6 +76,7 @@ class Adb(object):
         Raises:
             IOError
         '''
+        _ok_code = kwargs.pop("_ok_code", [0]) # default [0]
         with self.raw_cmd(*args) as p:
             exit_code = p.wait()
             stdout = p.stdout.read()
