@@ -375,7 +375,7 @@ class AutomatorServer(object):
         base_dir = os.path.dirname(__file__)
         for jar, url in self.__jar_files.items():
             filename = os.path.join(base_dir, url)
-            self.adb.cmd("push", filename, "/data/local/tmp/").wait()
+            self.adb.run_cmd("push", filename, "/data/local/tmp/")
         return list(self.__jar_files.keys())
 
     def need_install(self):
