@@ -76,7 +76,7 @@ class Adb(object):
         Raises:
             IOError
         '''
-        _ok_code = kwargs.pop("_ok_code", range(256))
+        _ok_code = kwargs.pop("_ok_code", [0])
         p = self.raw_cmd(*args)
         exit_code = p.wait()
         stdout = p.stdout.read()
