@@ -585,15 +585,21 @@ class AutomatorDevice(object):
     def __call__(self, **kwargs):
         return AutomatorDeviceObject(self, Selector(**kwargs))
 
-    def __getattr__(self, attr):
-        '''alias of fields in info property.'''
-        info = self.info
-        if attr in info:
-            return info[attr]
-        elif attr in self.__alias:
-            return info[self.__alias[attr]]
-        else:
-            raise AttributeError("%s attribute not found!" % attr)
+    # SeriousWarning: When info() method raise AttributeError,
+    # the method __getattr__ will call info again
+    # which will make code into dead loop
+    #
+    # I keep it commentted in order to remember
+    #
+    # def __getattr__(self, attr):
+    #     '''alias of fields in info property.'''
+    #     info = self.info
+    #     if attr in info:
+    #         return info[attr]
+    #     elif attr in self.__alias:
+    #         return info[self.__alias[attr]]
+    #     else:
+    #         raise AttributeError("%s attribute not found!" % attr)
 
     @property
     def info(self):

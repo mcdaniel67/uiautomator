@@ -76,10 +76,11 @@ class Adb(object):
         Raises:
             IOError
         '''
-        _ok_code = kwargs.pop("_ok_code", [0]) # default [0]
-        with self.raw_cmd(*args) as p:
-            exit_code = p.wait()
-            stdout = p.stdout.read()
+        _ok_code = kwargs.pop("_ok_code", range(256))
+        p = self.raw_cmd(*args)
+        exit_code = p.wait()
+        stdout = p.stdout.read()
+        p.stdout.close()
         if exit_code not in _ok_code:
             raise IOError("command: \"%s\" exit: %d" % (stdout, exit_code))
         return stdout, exit_code
