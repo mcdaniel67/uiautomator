@@ -61,7 +61,7 @@ class Adb(object):
         if not _is_windows():
             cmd_line = [" ".join(cmd_line)]
         devnull = subprocess.DEVNULL if six.PY3 else open(os.devnull, 'wb')
-        return subprocess.Popen(cmd_line, shell=True, \
+        return subprocess.Popen(cmd_line, shell=True,
                 stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     def run_cmd(self, *args, **kwargs):
@@ -77,7 +77,7 @@ class Adb(object):
             IOError
         '''
         _ok_code = kwargs.pop("_ok_code", [0])
-        p = self.raw_cmd(*args)
+        p = self.cmd(*args)
         exit_code = p.wait()
         stdout = p.stdout.read()
         p.stdout.close()
