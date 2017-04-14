@@ -694,12 +694,17 @@ Selector supports below parameters. Refer to [UiSelector java doc](http://develo
 - Qian Jin ([@QianJin2013][])
 - Xu Jingjie ([@xiscoxu][])
 - Xia Mingyuan ([@mingyuan-xia][])
+- codeskyblue ([@codeskyblue][])
+- Artem Iglikov, Google Inc. ([@artikz][])
 
 [@xiaocong]: https://github.com/xiaocong
 [@yuanyuan]: https://github.com/yuanyuanzou
 [@QianJin2013]: https://github.com/QianJin2013
 [@xiscoxu]: https://github.com/xiscoxu
 [@mingyuan-xia]: https://github.com/mingyuan-xia
+[@codeskyblue]: https://github.com/codeskyblue
+[@artikz]: https://github.com/artikz
+
 
 ## Issues & Discussion
 

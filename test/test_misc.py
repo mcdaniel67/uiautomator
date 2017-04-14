@@ -13,15 +13,15 @@ class TestMisc(unittest.TestCase):
         self.assertTrue('no_proxy' in os.environ)
         self.assertTrue('localhost' in os.environ.get('no_proxy', ''))
 
-    def test_load(self):
-        try:
-            from imp import reload
-        except:
-            pass
-        reload(uiautomator)
-        #self.assertIsNotNone(uiautomator.device) # removed
-        self.assertIsNotNone(uiautomator.rect)
-        self.assertIsNotNone(uiautomator.point)
+    # def test_load(self):
+    #     try:
+    #         from imp import reload
+    #     except:
+    #         pass
+    #     reload(uiautomator)
+    #     #self.assertIsNotNone(uiautomator.device) # removed
+    #     self.assertIsNotNone(uiautomator.rect)
+    #     self.assertIsNotNone(uiautomator.point)
 
     def test_rect(self):
         import random

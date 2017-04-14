@@ -358,18 +358,27 @@ class AutomatorServer(object):
         self.uiautomator_process = None
         self.adb = Adb(serial=serial, adb_server_host=adb_server_host, adb_server_port=adb_server_port)
         self.device_port = int(device_port) if device_port else DEVICE_PORT
-        if local_port:
-            self.local_port = local_port
-        else:
-            try:  # first we will try to use the local port already adb forwarded
-                for s, lp, rp in self.adb.forward_list():
-                    if s == self.adb.device_serial() and rp == 'tcp:%d' % self.device_port:
-                        self.local_port = int(lp[4:])
-                        break
-                else:
-                    self.local_port = next_local_port(adb_server_host)
-            except:
-                self.local_port = next_local_port(adb_server_host)
+        self.__local_port = local_port
+
+    def get_forwarded_port(self):
+        for s, lp, rp in self.adb.forward_list():
+            if s == self.adb.device_serial() and rp == 'tcp:%d' % self.device_port:
+                return int(lp[4:])
+        return None
+
+    @property
+    def local_port(self):
+        if self.__local_port:
+            return self.__local_port
+        for i in range(10): # Max retry 10 times
+            forwarded_port = self.get_forwarded_port()
+            if forwarded_port:
+                self.__local_port = forwarded_port
+                return self.__local_port
+
+            port = next_local_port(self.adb.adb_server_host)
+            self.adb.forward(port, self.device_port, rebind=False)
+        raise RuntimeError("Error run: adb forward tcp:<any> tcp:%d" % self.device_port)
 
     def push(self):
         base_dir = os.path.dirname(__file__)
@@ -645,7 +654,7 @@ class AutomatorDevice(object):
         if result:
             return result
 
-        device_file = self.server.jsonrpc.takeScreenshot("screenshot.png",
+        device_file = self.server.jsonrpc.takeScreenshot("uiautomator-screenshot.png",
                                                          scale, quality)
         if not device_file:
             return None

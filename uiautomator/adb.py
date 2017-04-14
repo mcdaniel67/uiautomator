@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import os
 import re
 import six
+from collections import namedtuple
 import subprocess
 
 
@@ -68,7 +69,6 @@ class Adb(object):
         '''Run command and wait exit
         Args:
             - args: command args
-            - _ok_code: list contains right code, default [0]
 
         Returns:
             (stdout, exit_code)
@@ -76,14 +76,13 @@ class Adb(object):
         Raises:
             IOError
         '''
-        _ok_code = kwargs.pop("_ok_code", [0])
         p = self.cmd(*args)
-        exit_code = p.wait()
-        stdout = p.stdout.read()
-        p.stdout.close()
-        if exit_code not in _ok_code:
-            raise IOError("command: \"%s\" exit: %d" % (stdout, exit_code))
-        return stdout, exit_code
+        try:
+            exit_code = p.wait()
+            output = p.stdout.read()
+            return namedtuple('CmdReturn', ['output', 'exit_code'])(output, exit_code)
+        finally:
+            p.stdout.close()
 
     def shell(self, *args):
         '''adb command, return adb shell <args> output.'''
@@ -136,9 +135,13 @@ class Adb(object):
             raise EnvironmentError("adb is not working.")
         return dict([s.split("\t") for s in out[index + len(match):].strip().splitlines() if s.strip()])
 
-    def forward(self, local_port, device_port):
+    def forward(self, local_port, device_port, rebind=True):
+        cmd = ['forward']
+        if not rebind:
+            cmd.append("--no-rebind")
+        cmd += ["tcp:%d" % local_port, "tcp:%d" % device_port]
         '''adb port forward. return 0 if success, else non-zero.'''
-        return self.run_cmd("forward", "tcp:%d" % local_port, "tcp:%d" % device_port)[1]
+        return self.run_cmd(*cmd).exit_code
 
     def forward_list(self):
         '''adb forward --list'''

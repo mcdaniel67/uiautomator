@@ -2,11 +2,13 @@ language: python
 python:
 - '2.7'
 - '3.4'
+- '3.5'
 - pypy
 install:
-- pip install coveralls nose mock
+- pip install pytest mock
 - pip install -r requirements.txt
 script:
+- python -mpytest test
 #- coverage run --source=uiautomator setup.py nosetests
 - python setup.py sdist
 after_success: coveralls

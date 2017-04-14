@@ -64,12 +64,12 @@ class TestDevice(unittest.TestCase):
     def test_screenshot(self):
         self.device.server.jsonrpc.takeScreenshot = MagicMock()
         self.device.server.jsonrpc.takeScreenshot.return_value = "1.png"
-        self.device.server.adb.cmd = cmd = MagicMock()
+        self.device.server.adb.run_cmd = cmd = MagicMock()
         self.device.server.screenshot = MagicMock()
         self.device.server.screenshot.return_value = None
         cmd.return_value.returncode = 0
         self.assertEqual(self.device.screenshot("a.png", 1.0, 99), "a.png")
-        self.device.server.jsonrpc.takeScreenshot.assert_called_once_with("screenshot.png", 1.0, 99)
+        self.device.server.jsonrpc.takeScreenshot.assert_called_once_with("uiautomator-screenshot.png", 1.0, 99)
         self.assertEqual(cmd.call_args_list, [call("pull", "1.png", "a.png"), call("shell", "rm", "1.png")])
 
         self.device.server.jsonrpc.takeScreenshot.return_value = None
@@ -257,16 +257,16 @@ class TestDevice(unittest.TestCase):
         self.assertFalse(self.device.wait("update", timeout=100, package_name="android"))
         self.device.server.jsonrpc_wrap.return_value.waitForWindowUpdate.assert_called_once_with("android", 100)
 
-    def test_get_info_attr(self):
-        info = {"test_a": 1, "test_b": "string", "displayWidth": 720, "displayHeight": 1024}
-        self.device.server.jsonrpc.deviceInfo = MagicMock()
-        self.device.server.jsonrpc.deviceInfo.return_value = info
-        for k in info:
-            self.assertEqual(getattr(self.device, k), info[k])
-        self.assertEqual(self.device.width, info["displayWidth"])
-        self.assertEqual(self.device.height, info["displayHeight"])
-        with self.assertRaises(AttributeError):
-            self.device.not_exists
+    # def test_get_info_attr(self):
+    #     info = {"test_a": 1, "test_b": "string", "displayWidth": 720, "displayHeight": 1024}
+    #     self.device.server.jsonrpc.deviceInfo = MagicMock()
+    #     self.device.server.jsonrpc.deviceInfo.return_value = info
+    #     for k in info:
+    #         self.assertEqual(getattr(self.device, k), info[k])
+    #     self.assertEqual(self.device.width, info["displayWidth"])
+    #     self.assertEqual(self.device.height, info["displayHeight"])
+    #     with self.assertRaises(AttributeError):
+    #         self.device.not_exists
 
     def test_device_obj(self):
         with patch("uiautomator.AutomatorDeviceObject") as AutomatorDeviceObject:
