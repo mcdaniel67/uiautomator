@@ -14,17 +14,22 @@ import itertools
 import json
 import hashlib
 import socket
-import re
 import collections
+import logging
 import xml.dom.minidom
-
 import requests
 
 from uiautomator.adb import Adb
 
 DEVICE_PORT = int(os.environ.get('UIAUTOMATOR_DEVICE_PORT', '9008'))
 LOCAL_PORT = int(os.environ.get('UIAUTOMATOR_LOCAL_PORT', '9008'))
-DEBUG = os.getenv('UIAUTOMATOR_DEBUG') == 'true'
+logger = logging.getLogger(__name__)
+
+if os.getenv('UIAUTOMATOR_DEBUG').lower() == 'true':
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    # If we don't specify debug logs, set the level to only log errors.
+    logging.basicConfig(level=logging.ERROR)
 
 if 'localhost' not in os.environ.get('no_proxy', ''):
     os.environ['no_proxy'] = "localhost,%s" % os.environ.get('no_proxy', '')
@@ -43,9 +48,6 @@ __author__ = "Xiaocong He, Codeskyblue"
 __all__ = ["Device", "rect", "point", "Selector", "JsonRPCError"]
 
 
-def debug_print(*args):
-    if DEBUG:
-        print(args)
 
 
 def _is_windows():
@@ -194,7 +196,7 @@ class JsonRPCMethod(object):
     def __call__(self, *args, **kwargs):
         if args and kwargs:
             raise SyntaxError("Could not accept both *args and **kwargs as JSONRPC parameters.")
-        debug_print('jsonrpc method:', self.method)
+        logger.debug('jsonrpc method: {method}'.format(method=self.method))
         data = {"jsonrpc": "2.0", "method": self.method, "id": self.id()}
         if args:
             data["params"] = args
@@ -420,14 +422,14 @@ class AutomatorServer(object):
                     return _method_obj(*args, **kwargs)
                 except (_URLError, socket.error, HTTPException) as e:
                     if restart:
-                        debug_print('restart')
+                        logger.debug('restart')
                         server.stop()
                         server.start(timeout=30)
                         return _JsonRPCMethod(url, method, timeout, False)(*args, **kwargs)
                     else:
                         raise
                 except JsonRPCError as e:
-                    debug_print('rpc error', e.code, e.message)
+                    logger.debug('rpc error. code={code} message={message}'.format(code=e.code, message=e.message))
                     if e.code >= error_code_base - 1:
                         server.stop()
                         server.start(timeout=10)
@@ -466,8 +468,8 @@ class AutomatorServer(object):
         # 对应关系列表
         # http://www.cnblogs.com/lipeineng/archive/2017/01/06/6257859.html
         # Android 4.3 (sdk=18)
-        debug_print('sdk version(instrument>=18)', self.sdk_version())
-        debug_print('product', self.ro_product())
+        logger.debug('sdk version(instrument>=18) {version}'.format(version=self.sdk_version()))
+        logger.debug('product: {product}'.format(product=self.ro_product()))
         # FIXME(ssx): hot fix here
         # instrument cannot run on Xiaomi
         if self.sdk_version() >= 18 and \
@@ -485,14 +487,14 @@ class AutomatorServer(object):
                 ["-c", "com.github.uiautomatorstub.Stub"]
             ))
 
-        debug_print('$ ' + subprocess.list2cmdline(list(cmd)))
+        logger.debug('$ {cmd}'.format(cmd=subprocess.list2cmdline(list(cmd))))
         self.uiautomator_process = self.adb.cmd(*cmd)
         self.adb.forward(self.local_port, self.device_port)
 
         while not self.alive and timeout > 0:
             time.sleep(0.2)
             timeout -= 0.2
-            debug_print('poll', self.uiautomator_process.poll())
+            logger.debug('poll: {poll}'.format(poll=self.uiautomator_process.poll()))
             if self.uiautomator_process.poll() is not None:
                 stdout = self.uiautomator_process.stdout.read()
                 raise IOError("uiautomator start failed: " + stdout)
