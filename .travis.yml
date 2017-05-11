@@ -1,11 +1,14 @@
 language: python
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "pypy"
+
+matrix:
+  include:
+      - os: linux
+        sudo: required
+        python: 2.7
+        env: TOXENV=py27
+      - os: osx
+        language: generic
+        env: TOXENV=py27
 
 # Install test dependencies. TravisCI gives us nose, mock, and pytest by default
 install:
