@@ -56,6 +56,7 @@ class TestAutomatorServer(unittest.TestCase):
         server.adb = MagicMock()
         server.start()
         server.adb.cmd.assert_called_with("shell", "am", "instrument", "-w",
+                                          "-e", "class", "com.github.uiautomator.stub.Stub",
                                           "com.github.uiautomator.test/android.support.test.runner.AndroidJUnitRunner")
 
     def test_start_success_under_api_18(self):
